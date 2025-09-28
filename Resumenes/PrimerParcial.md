@@ -149,7 +149,7 @@ El MER se utiliza para un diseño conceptual cuando el MR para un diseño lógic
 
 - **Algoritmo de TABLEAU** (Para ver lossless join en más que descomposición binaria) Se termina cuando no se pueden hacer más cambios en la tableau final (T*) aplicando las dependencias funcionales. Si T* contiene una fila con todos los símbolos distinguidos entonces el esquema es SPI.
 
-  ![alt text](image.png)
+  ![alt text](./Imágenes/image.png)
 
   En cierto grado esto te da la intuición de cómo se pasa de una T a otra.
 
@@ -158,8 +158,8 @@ El MER se utiliza para un diseño conceptual cuando el MR para un diseño lógic
 - **Proyección de un conjunto DF:** Decimos que la proyección de un conjunto de dependencias funcionales F sobre un conjunto de atributos Z, que se escribe pi<sub>Z</sub>(F), es el conjunto de dependencias funcionales X -> Y \in F<sup>+</sup> tal que XY \subseteq Z.
 
 - **Algoritmo para testear perdidas de dependencias**
-  ![alt text](image-1.png)
-  ![alt text](image-2.png)
+  ![alt text](./Imágenes/image-1.png)
+  ![alt text](./Imágenes/image-2.png)
 
 ### Formas Normales
 Conjunto de propiedades para los esquemas de relación para los esquemas de relación sobre un conjunto de dependencias funcionales. Las formas normales nos permiten evitar las anomalías que mencionamos anteriormente. Las más importantes son la tercera forma normal y la forma normal de Boyce-Cood.  
@@ -181,14 +181,14 @@ Nos dan un piso para el proceso de descomposición.
 
 - **Forma Normal de Boyce-Codd (FNBC)** Para toda dependencia funcional no trivial X -> A sobre R, X es superclave de R. Lo equivalente a decir que para toda dependencia X -> Y en F<sup>+</sup>, o bien Y \subseteq X ó X es una superclave de R.
 
-  ![alt text](image-6.png)
-  ![alt text](image-7.png)
+  ![alt text](./Imágenes/image-6.png)
+  ![alt text](./Imágenes/image-7.png)
 
 - **Propiedades de las Formas Normales:**
-  ![alt text](image-3.png)
+  ![alt text](./Imágenes/image-3.png)
 
 - **Algoritmo de descomposición SPI y SPDF en 3FN**
   
-  ![alt text](image-4.png)
-  ![alt text](image-5.png)
+  ![alt text](./Imágenes/image-4.png)
+  ![alt text](./Imágenes/image-5.png)
  
