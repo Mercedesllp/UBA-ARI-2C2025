@@ -2,15 +2,17 @@
 
 # Modelo optimista
 
-**Timestamp:(TS(T))** Número de marca ascendente y único para cada transacción. El scheduler tiene una tabla de transacciones y sus _timestamps_.
+**Enfoque:** Estos métodos asumen que no ocurrirá un comportamiento no serializable y actúan para reparar el problema sólo cuando ocurre una violación aparente.
 
-Cada elemento (celda de la base de datos) X se asocia a 2 timestamps y un bit extra:
+**Timestamp:(TS(T))** **Número de marca** asignado de forma ascendente y único para cada transacción. El scheduler tiene una tabla de transacciones y sus _timestamps_. El scheduler mantiene una **tabla** con las transacciones y sus timestamps; este también maneja la ejecución concurrente de manera que los timestamps determinan el **orden de serialización**.
 
-- **RT(X):** (Read-Timestamp) Tiempo de lectura, el timestamp más alto de una transacción que haya leído X. 
+Cada elemento (ítem de la base de datos en una celda) X se asocia a 2 timestamps y un bit extra:
 
-- **WT(X):** (Write Timestamp) Tiempo de escritura, el timestamp más alto de una transacción que ha escrito X.
+- **RT(X):** (Read-Timestamp) Tiempo de lectura, el timestamp **más alto** de una transacción que **haya leído X**. 
 
-- **C(x):** (Commit) Bit de commit para X, es verdadero sii la transacción más reciente que recibió X ha realizado un commit.
+- **WT(X):** (Write-Timestamp) Tiempo de escritura, el timestamp **más alto** de una transacción que **ha escrito X**.
+
+- **C(x):** (Commit) Bit de commit para X, es verdadero sii la transacción más **reciente** que **escribió X ha realizado un commit**.
 
 **Fisicamente irrealizable:** 
 

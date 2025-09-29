@@ -1,5 +1,9 @@
 # Clase 4
 
+Vamos a ver el **paradigma pesimista** que es un paradigma para el control de concurrencia en bases de datos (es pesimista u optimista _(clase 5)_ según cómo manejan los conflictos de accesos a datos).
+
+**Enfoque** del modelo pesimista: Asume que los conflictos de datos son probables y que las transacciones bloquearán los datos que leen o escriben.
+
 ## Serializabilidad
 
 **Transacciones:** Conjunto de operaciones (reads, writes y luego puede llegar a terminar con un commit o abort) con un orden.
@@ -16,7 +20,7 @@
 
 **Conflicto serializable:(SR)** Una histora es conflicto **serializable** si es conflicto equivalente a alguna historia serial.
 
-**Grafo de precedencia:** Se utiliza el grafo de precedencia SG(H). Es un grafo dirigido con las siguientes características:
+**Grafo de precedencia:** Se utiliza el grafo de precedencia **SG(H)**. Es un grafo dirigido con las siguientes características:
 - Un nodo para cada transacción Ti ⊆ H.
 
 - Hay ejes entre Ti y Tj sí y sólo sí hay una operación de Ti que precede en H a una operación de Tj y son operaciones conflictivas.
@@ -112,7 +116,7 @@ privilegio de lectura sobre X pero no de escritura. Como ventaja el update lock 
   - Fase de **crecimiento**: toma los locks
   - Fase de **contracción**: libera los locks
 
-**Seriabilizabilidad con 2PL:** Dado T = T<sub>1</sub>, T<sub>2</sub>, ..., T<sub>n</sub>, si toda T<sub>i</sub> en T es 2PL, entonces todo H legal sobre T es SR. Es mas se cumple que también Gen(2PL) ⊂ OCSR.  
+**Seriabilizabilidad con 2PL:** Dado T = T<sub>1</sub>, T<sub>2</sub>, ..., T<sub>n</sub>, si **toda T<sub>i</sub> en T es 2PL**, entonces todo H legal sobre T es SR. Es mas se cumple que también Gen(2PL) ⊂ OCSR.  
 En una historia H puede pasar que se lea un ítem de una transacción que no hizo commit (o sea una historia puede ser 2PL y no ser ACA).
 
 **Variantes de 2PL:**
