@@ -4,6 +4,8 @@
 
 **Enfoque:** Estos métodos asumen que no ocurrirá un comportamiento no serializable y actúan para reparar el problema sólo cuando ocurre una violación aparente.
 
+# Timestamping
+
 **Timestamp:(TS(T))** **Número de marca** asignado de forma ascendente y único para cada transacción. El scheduler tiene una tabla de transacciones y sus _timestamps_. El scheduler mantiene una **tabla** con las transacciones y sus timestamps; este también maneja la ejecución concurrente de manera que los timestamps determinan el **orden de serialización**.
 
 Cada elemento (ítem de la base de datos en una celda) X se asocia a 2 timestamps y un bit extra:
@@ -14,34 +16,33 @@ Cada elemento (ítem de la base de datos en una celda) X se asocia a 2 timestamp
 
 - **C(x):** (Commit) Bit de commit para X, es verdadero sii la transacción más **reciente** que **escribió X ha realizado un commit**.
 
-**Fisicamente irrealizable:** 
+**Fisicamente irrealizable:** Cuando no se puede mantener la ilusión de que todo ocurrió en el orden de los timestamps el comportamiento se llama asi. O sea, que puede suceder que:
 
-- **Read Too Late:** (T comienza ; W escribe X ; T lee X -> T debe abortar si TS(T) < TS(W)) 
-  - TS(T) < WT(X)
-  - Una transacción T intenta leer X pero el valor de escritura indica que X fue escrito después de que teóricamente debería haberlo leído T.
-  
-- **Write Too Late:**
-  - WT(X) < TS(T) < RT(X)
-  - T intenta escribir pero el tiempo de lectura de X indica que alguna otra transacción debería haber leído el valor escrito por T (lee otro valor en su lugar).
+  - **Read Too Late:** (T comienza ; W escribe X ; T lee X -> T debe abortar si TS(T) < TS(W)) 
+    - TS(T) < WT(X)
+    - Una transacción T intenta leer X pero el valor de escritura indica que X fue escrito después de que teóricamente debería haberlo leído T.
+    
+  - **Write Too Late:** (T comienza ; W lee X ; T escribe X -> T debe abortar si TS(T) < TS(W)) 
+    - WT(X) < TS(T) < RT(X)
+    - T intenta escribir pero el tiempo de lectura de X indica que alguna otra transacción debería haber leído el valor escrito por T (lee otro valor en su lugar).
 
-**Dirty data:** Una lectura sucia ocurre cuando se le permite a una transacción la lectura de un elemento que ha sido modificado por otra transacción concurrente pero que todavía no ha sido cometida (commit).
+**Dirty data:** Una lectura sucia ocurre cuando se le permite a una transacción la **lectura** de un elemento que ha sido **modificado** por otra transacción concurrente pero que todavía **no ha sido cometida** (commit).
 
-**Thomas write rule:** La escritura puede “saltearse” cuando ya existe una escritura de una transacción con un timestamp de mayor valor. Es decir cuando WT(X) > TS(T). 
+**Thomas write rule:** La escritura puede “saltearse” cuando ya existe una escritura de una transacción con un timestamp de mayor valor. Es decir cuando WT(X) > TS(T).   
+Si se aborta la escritura con mayor TS, entonces se efectiviza la escritura que se había intentado. Para hacer esto, como C(X) se pone en falso al momento en que se escribió porque no se commiteó y también el scheduler hace una copia de los valores de X y de WT(X) previos.
 
-![alt text](./Imágenes/TWR_U_commits.png)
-![alt text](./Imágenes/TWR_U_doesnt_commit.png)
+## Opciones para el scheduler ante una solicitud de T:
 
-## Reglas para el scheduler:
 - Conceder la solicitud.
 - Abortar y reiniciar T con un nuevo timestamp (rollback).
 - Demorar T y decidir luego si abortar o conceder la solicitud (si el requerimiento es una lectura que podría ser sucia).
 
 ### Recibe una solicitud de lectura r<sub>t</sub>(X)
 
-**Caso 1:** Si TS(T) >= WT(X) - es **físicamente realizable** es decir, no sucede read too late.
+**Caso 1:** Si TS(T) >= WT(X) - es físicamente realizable (**no sucede read too late**).
 
-- Si C(X) es True, conceder la solicitud. Si TS(T)>RT(X) hacer RT(X)=TS(T), de otro modo no cambiar RT(X).
-- Si C(X) es False demorar T hasta que C(X) sea verdadero o la transacción que escribió a X aborte.
+- Si **C(X) es True**, conceder la solicitud. Si TS(T)>RT(X) hacer RT(X)=TS(T), de otro modo no cambiar RT(X).
+- Si **C(X) es False**, demorar T hasta que C(X) sea verdadero o la transacción que escribió a X aborte.
 
 **Caso 2:** Si TS(T) < WT(X) - es físicamente irrealizable (**read too late**).
 
@@ -49,7 +50,7 @@ Cada elemento (ítem de la base de datos en una celda) X se asocia a 2 timestamp
 
 ### Recibe una solicitud de escritura w<sub>t</sub>(X)
 
-**Caso 1:** Si TS(T) >= RT(X) y TS(T) >= WT(X) - es físicamente realizable, es decir, no sucede write too late.
+**Caso 1:** Si TS(T) >= RT(X) y TS(T) >= WT(X) - es físicamente realizable, es decir, **no sucede write too late**.
 
 - Escribir el nuevo valor para X.
 - WT(X) := TS(T), o sea asignar nuevo WT a X.
@@ -58,24 +59,32 @@ Cada elemento (ítem de la base de datos en una celda) X se asocia a 2 timestamp
 **Caso 2:** Si TS(T) >= RT(X) pero TS(T) < WT(X) - es físicamente realizable, pero ya hay un valor posterior en X.
 
 - Si C(X) es true, ignora la escritura.
-- Si C(X) es falso demorar T hasta que C(X) sea verdadero o la transacción que escribió a X aborte.
+- Si C(X) es falso **demorar T** (se frena completamente la transacción) hasta que C(X) sea verdadero o la transacción que escribió a X aborte.
 
 **Caso 3:** Si TS(T) < RT(X) - es físicamente irrealizable, es decir, write too
 late.
 
 - Se hace Rollback T (abortar y reiniciar con un nuevo timestamp).
 
-# Protocolos multiversión
+### Recibe un commit de T (C(T))
+Para cada uno de los elementos X escritos por T se hace:  
+  - C(X) := true.
+  - Se permite proseguir a las transacciones que esperan a que X sea committed.
 
-**Timestamping multiversión:**
+### Recibe un abort/rollback de T (A(T) ó R(T))
+
+Cada transacción que estaba esperando por un elemento X que T escribió debe repetir el intento de lectura o escritura y verificar si ahora el intento es legal.
+
+# Timestamping multiversión
+
 - Variación/Extensión del planificadores monoversión
-- Mantiene versiones históricas de los items
+- Mantiene versiones históricas de los items (las versiones son transparentes para la aplicación y transitorias (es decir, sujetas a recolección de basura))
 - Permite que las transacciones lean valores antiguos
 - Evita aborts ocasionados por eventos read-too-late
 
-**Lectura y escritura:** Una operación de lectura de la forma r (x) lee una versión existente de x, y una operación de escritura de la forma w (x) (siempre) crea una nueva versión de x o sobrescribe una existente.  
+**Lectura y escritura:** Una operación de lectura de la forma r(x) lee una versión existente de x (la cual podría elegir), y una operación de escritura de la forma w(x) (siempre) crea una nueva versión de x o sobrescribe una existente.  
 
-
+Asumimos que cada transacción escribe cada elemento de datos como máximo una vez; por lo tanto, si t<sub>j</sub> contiene la operación w<sub>j</sub>(x), podemos denotar la versión de x creada por esta escritura como x<sub>j</sub> .
 
 
 
