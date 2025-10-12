@@ -77,16 +77,56 @@ Cada transacción que estaba esperando por un elemento X que T escribió debe re
 
 # Timestamping multiversión
 
-- Variación/Extensión del planificadores monoversión
+- Variación/Extensión del schedulers monoversión
 - Mantiene versiones históricas de los items (las versiones son transparentes para la aplicación y transitorias (es decir, sujetas a recolección de basura))
 - Permite que las transacciones lean valores antiguos
 - Evita aborts ocasionados por eventos read-too-late
 
-**Lectura y escritura:** Una operación de lectura de la forma r(x) lee una versión existente de x (la cual podría elegir), y una operación de escritura de la forma w(x) (siempre) crea una nueva versión de x o sobrescribe una existente.  
+**Lectura y escritura:** Una operación de lectura de la forma r(x) **lee una versión** existente de x (la cual podría elegir), y una operación de escritura de la forma w(x) (siempre) **crea una nueva versión** de x o sobrescribe una existente.  
 
 Asumimos que cada transacción escribe cada elemento de datos como máximo una vez; por lo tanto, si t<sub>j</sub> contiene la operación w<sub>j</sub>(x), podemos denotar la versión de x creada por esta escritura como x<sub>j</sub> .
 
+**Función de versión:** Sea s una historia, una función de versión de s es una función h (h: op -> op) que:
 
+  - Asocia cada operación de lectura con una operación de escritura anterior del mismo ítem.
+  - Para operaciones de escritura es la identidad.
 
+**Historia multiversión:** 
+  - Toda operación en la historia pertenece al conjunto de operaciones de la historia con h aplicada.
+  - El orden de cada operación en una transacción se debe respetar en la historia.
+  - Si a una operación l se le aplica h y retorna q (donde l y q no pertenecen a la misma transacción), entonces la transacción a la que pertenece q debe haber commiteado antes que la transacción de l.
 
+**Schedule multiversión:** Un **prefijo** de una historia multiversión.  
+Un planificador multiversión es un **planificador monoversión** si su función de versión asigna cada lectura a la **última escritura precedente** en el mismo elemento de datos.
 
+**Reads-from relation: (RF(m))** (t<sub>j</sub>, x, t<sub>i</sub>) La transacción t<sub>j</sub> lee de la transacción t<sub>i</sub> el ítem x.  
+Sean m y m' dos schedules multiversión tal que el conjunto de transacciones es el mismo, entonces m y m' son **view equivalentes** si RF(m) = RF(m').
+
+**Multiversión view serializable:** Sea m una historia multiversión, se dice que m es multiversión view serializable si **existe una historia m' serial monoversión tal que m =<sub>v</sub> m'**. La clase de hitorias que cumplen se la refiere como **MVSR**. Determinar pertenencia en esta clase es NP-completo.
+
+**Grafo de conflictos - RF: G(m)** Se construye con nodos por cada transacción de m con un eje t<sub>i </sub> -> t<sub>j</sub> si r<sub>j</sub> (x<sub>i </sub> ) esta en m.  
+Para cualquier par de schedulers multiversión, m =<sub>v</sub> m' **entonces** G(m) = G(m') (la vuelta puede no valer).
+
+**Orden de versiones: (<<<sub>x</sub>)** Un orden de versiones para un ítem de datos x es un orden total entre todas las versiones de x.  
+Un orden de versiones para un plan multiversión m es la unión de los órdenes de versiones para todos los ítems escritos en m.
+
+**Grafo de serialización multiversión: (MVSG(m))** Dado un plan m y un orden de versiones <<, el Grafo de Serialización Multiversión, MVSG (m, <<), es un grafo dirigido donde:
+  - Los **nodos son las transacciones** en m.
+  - Las **aristas** se definen por las **reglas de conflicto y de orden de versiones**, contiene:
+    - Todas las aristas del grafo de conflictos G(m),
+    - Para r<sub>k</sub>(x<sub>j</sub>), w<sub>i</sub>(x<sub>i</sub>) ∈ op(m): Si x<sub>i</sub> << x<sub>j</sub>, entonces agregar arista t<sub>i</sub> -> t<sub>k</sub>. O sea, si la versión de x que lee la transacción k es más nueva que la operación en i que escribió x entonces la transacción que creó la versión x<sub>i</sub> se conecta con la que lee la versión x<sub>j</sub>.
+    - Para r<sub>k</sub>(x<sub>j</sub>), w<sub>i</sub>(x<sub>i</sub>) ∈ op(m): Si x<sub>j</sub> << x<sub>i</sub>, entonces agregar arista t<sub>k</sub> -> t<sub>i</sub> .
+
+La idea principal de esto es que el MVSG extiende el grafo de conflictos incorporando
+dependencias de orden de versiones.  
+Un historial multiversión m pertenece a MVSR (Multiversion Serializability) si y solo si existe un orden de versiones << tal que el MVSG (m, <<) sea **acíclico**.
+
+**Multiversión conflicto serializable (MCSR):** Un conflicto multiversión en un schedule multiversión m es un par de pasos r<sub>i</sub>(x<sub>j</sub>) y w<sub>k</sub>(x<sub>k</sub>) tales que r<sub>i</sub>(x<sub>j</sub>) <<sub>n</sub>  w<sub>k</sub>(x<sub>k</sub>). Es una subclase de MVSR cuya pertenencia puede determinarse en P.
+
+  - El único tipo relevante de conflictos son los pares de operaciones read-write en el mismo ítem de datos, no necesariamente en la misma versión.
+  - Los pares write-write en el mismo ítem de datos ya no se consideran conflictos, ya que crean  versiones diferentes y depende de las operaciones de lectura elegir la versión adecuada
+  - **Los write-read no siempre son conflictos, pero si la lectura depende de una escritura (o de que la escritura aún no ocurrió), entonces sí se convierten en conflictos porque no se pueden intercambiar los órdenes de ejecución sin cambiar el resultado.** -> No entiendo esto
+
+**Pasos de transformación:** **Un paso de transformación intercambia el orden de dos pasos adyacentes (es decir, pasos p, q con p \< q tal que o \< p y q \< o para todos los demás pasos o) pero sin invertir el orden de un par de conflicto multiversión (es decir, rw ).** -\> Que es un paso?
+
+**Reducibilidad multiversión:** Una historia multiversión es multiversión reducible si puede transformarse en una historia serial monoversión mediante una secuencia de pasos de transformación.
